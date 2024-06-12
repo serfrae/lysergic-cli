@@ -2151,6 +2151,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "borsh 1.5.1",
+ "chrono",
  "clap 4.5.7",
  "lysergic-tokenizer",
  "serde",
@@ -2166,6 +2167,7 @@ name = "lysergic-tokenizer"
 version = "0.1.0"
 dependencies = [
  "borsh 1.5.1",
+ "chrono",
  "num-derive 0.4.2",
  "num-traits",
  "solana-program",
