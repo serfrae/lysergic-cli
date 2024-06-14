@@ -37,9 +37,7 @@ enum Commands {
     #[command(subcommand)]
     Redeem(Redeem),
     #[command(subcommand)]
-    Claim(Claim),
-    #[command(subcommand)]
-    Burn(Burn),
+    Terminate(Terminate),
 }
 
 #[derive(Subcommand, Debug)]
@@ -60,18 +58,15 @@ enum Tokenize {
 #[derive(Subcommand, Debug)]
 enum Redeem {
     Principal(InstructionCommonFields),
+    Yield(InstructionCommonFields),
     PrincipalYield(InstructionCommonFields),
 }
 
 #[derive(Subcommand, Debug)]
-enum Claim {
-    Yield(InstructionCommonFields),
-}
-
-#[derive(Subcommand, Debug)]
-enum Burn {
-    Principal(InstructionCommonFields),
-    Yield(InstructionCommonFields),
+enum Terminate {
+    Terminate(TerminateCommonFields),
+    TerminateTokenizer(TerminateCommonFields),
+    TerminateMints(TerminateCommonFields),
 }
 
 #[derive(Args, Debug)]
@@ -85,6 +80,21 @@ struct InstructionCommonFields {
     lysergic_tokenizer_address: Pubkey,
     amount: u64,
     underlying_mint_address: Option<Pubkey>,
+}
+
+/// User may want to pass a toml configuration file to the CLI instead of arguments
+/// This struct will be used to parse the configuration file
+struct ConfigOptions {
+    lysergic_tokenizer_address: Pubkey,
+    underlying_mint_address: Option<Pubkey>,
+    expiry: Option<i64>,
+    amount: Option<u64>,
+}
+
+#[derive(Args, Debug)]
+struct TerminateCommonFields {
+    lysergic_tokenizer_address: Pubkey,
+    underlying_mint_address: Pubkey,
 }
 
 fn main() -> Result<()> {
@@ -126,6 +136,10 @@ fn main() -> Result<()> {
                 let yield_mint_address =
                     get_yield_mint_address(&lyst::id(), &lysergic_tokenizer_address);
 
+                //TODO: Calculation methodology for the fixed APY of the principal token
+                //NOTE: placeholder
+                let fixed_apy = 0;
+
                 instruction::init_lysergic_tokenizer(
                     &lysergic_tokenizer_address,
                     &wallet_pubkey,
@@ -134,6 +148,7 @@ fn main() -> Result<()> {
                     &principal_mint_address,
                     &yield_mint_address,
                     Expiry::from_i64(common_fields.expiry)?,
+                    fixed_apy,
                 )
                 .map_err(|err| anyhow!("Unable to create init instruction: {}", err))?
             }
@@ -151,10 +166,7 @@ fn main() -> Result<()> {
                     get_yield_mint_address(&lyst::id(), &lysergic_tokenizer_address);
 
                 let expiry = Expiry::from_i64(common_fields.expiry).map_err(|err| {
-                    anyhow!(
-                        "Unable to parse the given value to `Expiry`: {}",
-                        err
-                    )
+                    anyhow!("Unable to parse the given value to `Expiry`: {}", err)
                 })?;
 
                 instruction::init_mints(
@@ -186,6 +198,10 @@ fn main() -> Result<()> {
                 let yield_mint_address =
                     get_yield_mint_address(&lyst::id(), &lysergic_tokenizer_address);
 
+                //TODO: Calculation methodology for the fixed APY of the principal token
+                //NOTE: placeholder
+                let fixed_apy = 0;
+
                 instruction::init_tokenizer_and_mints(
                     &lysergic_tokenizer_address,
                     &wallet_pubkey,
@@ -194,6 +210,7 @@ fn main() -> Result<()> {
                     &principal_mint_address,
                     &yield_mint_address,
                     Expiry::from_i64(common_fields.expiry)?,
+                    fixed_apy,
                 )
                 .map_err(|err| {
                     anyhow!(
@@ -355,7 +372,7 @@ fn main() -> Result<()> {
                         &principal_mint_address,
                     );
 
-                instruction::redeem_principal_only(
+                instruction::redeem_mature_principal(
                     &common_fields.lysergic_tokenizer_address,
                     &underlying_vault_address,
                     &underlying_mint_address,
@@ -431,9 +448,7 @@ fn main() -> Result<()> {
                     )
                 })?
             }
-        },
-        Commands::Claim(claim) => match claim {
-            Claim::Yield(common_fields) => {
+            Redeem::Yield(common_fields) => {
                 let underlying_mint_address =
                     if let Some(addr) = common_fields.underlying_mint_address {
                         addr
@@ -468,47 +483,47 @@ fn main() -> Result<()> {
                 .map_err(|err| anyhow!("Unable to create `ClaimYield` instruction: {}", err))?
             }
         },
-        Commands::Burn(burn) => match burn {
-            Burn::Principal(common_fields) => {
-                let principal_mint_address = get_principal_mint_address(
-                    &lyst::id(),
+        Commands::Terminate(terminate) => match terminate {
+            Terminate::Terminate(common_fields) => instruction::terminate(
+                &common_fields.lysergic_tokenizer_address,
+                &wallet_pubkey,
+                &spl_associated_token_account::get_associated_token_address(
                     &common_fields.lysergic_tokenizer_address,
-                );
-
-                let user_principal_token_address =
-                    spl_associated_token_account::get_associated_token_address(
-                        &wallet_pubkey,
-                        &principal_mint_address,
-                    );
-
-                instruction::burn_principal_token(
+                    &common_fields.underlying_mint_address,
+                ),
+                &spl_associated_token_account::get_associated_token_address(
                     &common_fields.lysergic_tokenizer_address,
-                    &principal_mint_address,
+                    &get_principal_mint_address(
+                        &lyst::id(),
+                        &common_fields.lysergic_tokenizer_address,
+                    ),
+                ),
+                &spl_associated_token_account::get_associated_token_address(
+                    &common_fields.lysergic_tokenizer_address,
+                    &get_yield_mint_address(&lyst::id(), &common_fields.lysergic_tokenizer_address),
+                ),
+            )
+            .map_err(|err| anyhow!("Unable to create `Terminate` instruction: {}", err))?,
+            Terminate::TerminateTokenizer(common_fields) => {
+                instruction::terminate_lysergic_tokenizer(
+                    &common_fields.lysergic_tokenizer_address,
                     &wallet_pubkey,
-                    &user_principal_token_address,
-                    common_fields.amount,
+                    &spl_associated_token_account::get_associated_token_address(
+                        &common_fields.lysergic_tokenizer_address,
+                        &common_fields.underlying_mint_address,
+                    ),
                 )
-                .map_err(|err| anyhow!("Unable to create `BurnPrincipal` instruction: {}", err))?
+                .map_err(|err| {
+                    anyhow!("Unable to create `TerminateTokenizer` instruction: {}", err)
+                })?
             }
-            Burn::Yield(common_fields) => {
-                let yield_mint_address =
-                    get_yield_mint_address(&lyst::id(), &common_fields.lysergic_tokenizer_address);
-
-                let user_yield_token_address =
-                    spl_associated_token_account::get_associated_token_address(
-                        &wallet_pubkey,
-                        &yield_mint_address,
-                    );
-
-                instruction::burn_yield_token(
-                    &common_fields.lysergic_tokenizer_address,
-                    &yield_mint_address,
-                    &wallet_pubkey,
-                    &user_yield_token_address,
-                    common_fields.amount,
-                )
-                .map_err(|err| anyhow!("Unable to create `BurnYield` instruction: {}", err))?
-            }
+            Terminate::TerminateMints(common_fields) => instruction::terminate_mints(
+                &common_fields.lysergic_tokenizer_address,
+                &wallet_pubkey,
+                &get_principal_mint_address(&lyst::id(), &common_fields.lysergic_tokenizer_address),
+                &get_yield_mint_address(&lyst::id(), &common_fields.lysergic_tokenizer_address),
+            )
+            .map_err(|err| anyhow!("Unable to create `TerminateMints` instruction: {}", err))?,
         },
     };
 
