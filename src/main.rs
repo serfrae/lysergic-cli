@@ -294,6 +294,8 @@ fn main() -> Result<()> {
 					&common_fields.underlying_mint_address,
 				);
 
+                println!("Underlying vault: {}", underlying_vault);
+
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
 
@@ -343,7 +345,7 @@ fn main() -> Result<()> {
 					);
 
 				let (principal_mint_address, _) =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_underlying_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -374,6 +376,33 @@ fn main() -> Result<()> {
 					)
 				})?
 			}
+			Redeem::Yield(common_fields) => {
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
+
+				let user_underlying_token_address =
+					spl_associated_token_account::get_associated_token_address(
+						&wallet_pubkey,
+						&common_fields.underlying_mint_address,
+					);
+
+				let user_yield_token_address =
+					spl_associated_token_account::get_associated_token_address(
+						&wallet_pubkey,
+						&yield_mint_address,
+					);
+
+				instruction::claim_yield(
+					&common_fields.lysergic_tokenizer_address,
+					&common_fields.underlying_mint_address,
+					&yield_mint_address,
+					&wallet_pubkey,
+					&user_underlying_token_address,
+					&user_yield_token_address,
+					common_fields.amount,
+				)
+				.map_err(|err| anyhow!("Unable to create `ClaimYield` instruction: {}", err))?
+			}
 			Redeem::PrincipalYield(common_fields) => {
 				let underlying_vault_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -382,10 +411,10 @@ fn main() -> Result<()> {
 					);
 
 				let (principal_mint_address, _) =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let (yield_mint_address, _) =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_underlying_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -423,33 +452,6 @@ fn main() -> Result<()> {
 						err
 					)
 				})?
-			}
-			Redeem::Yield(common_fields) => {
-				let (yield_mint_address, _) =
-					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
-
-				let user_underlying_token_address =
-					spl_associated_token_account::get_associated_token_address(
-						&wallet_pubkey,
-						&common_fields.underlying_mint_address,
-					);
-
-				let user_yield_token_address =
-					spl_associated_token_account::get_associated_token_address(
-						&wallet_pubkey,
-						&yield_mint_address,
-					);
-
-				instruction::claim_yield(
-					&common_fields.lysergic_tokenizer_address,
-					&common_fields.underlying_mint_address,
-					&yield_mint_address,
-					&wallet_pubkey,
-					&user_underlying_token_address,
-					&user_yield_token_address,
-					common_fields.amount,
-				)
-				.map_err(|err| anyhow!("Unable to create `ClaimYield` instruction: {}", err))?
 			}
 		},
 		Commands::Terminate(terminate) => match terminate {
