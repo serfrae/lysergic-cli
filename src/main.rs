@@ -126,11 +126,11 @@ fn main() -> Result<()> {
 						&common_fields.underlying_mint_address,
 					);
 
-				let principal_mint_address =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&lysergic_tokenizer_address);
 
 				//TODO: Calculation methodology for the fixed APY of the principal token
 				//NOTE: placeholder
@@ -165,11 +165,11 @@ fn main() -> Result<()> {
 				let (lysergic_tokenizer_address, _) =
 					get_tokenizer_address(&common_fields.underlying_mint_address, expiry_date);
 
-				let principal_mint_address =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&lysergic_tokenizer_address);
 
 				println!("Principal Mint Address: {}", principal_mint_address);
 				println!("Yield Mint Address: {}", yield_mint_address);
@@ -177,9 +177,9 @@ fn main() -> Result<()> {
 				instruction::init_mints(
 					&lysergic_tokenizer_address,
 					&wallet_pubkey,
+					&common_fields.underlying_mint_address,
 					&principal_mint_address,
 					&yield_mint_address,
-					&common_fields.underlying_mint_address,
 					expiry,
 				)
 				.map_err(|err| anyhow!("Unable to create `Initialize` instruction: {}", err))?
@@ -189,9 +189,7 @@ fn main() -> Result<()> {
 					anyhow!("Unable to parse the given value to `Expiry`: {}", err)
 				})?;
 
-				let expiry_date = expiry
-					.to_expiry_date(timestamp)
-					.expect("Invalid");
+				let expiry_date = expiry.to_expiry_date(timestamp).expect("Invalid");
 				let (lysergic_tokenizer_address, _) =
 					get_tokenizer_address(&common_fields.underlying_mint_address, expiry_date);
 
@@ -201,11 +199,11 @@ fn main() -> Result<()> {
 						&common_fields.underlying_mint_address,
 					);
 
-				let principal_mint_address =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&lysergic_tokenizer_address);
 
 				//TODO: Calculation methodology for the fixed APY of the principal token
 				//NOTE: placeholder
@@ -251,8 +249,8 @@ fn main() -> Result<()> {
 				.map_err(|err| anyhow!("Unable to create `Deposit` instruction: {}", err))?
 			}
 			Tokenize::Principal(common_fields) => {
-				let principal_mint_address =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_principal_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -272,8 +270,8 @@ fn main() -> Result<()> {
 				})?
 			}
 			Tokenize::Yield(common_fields) => {
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_yield_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -296,11 +294,11 @@ fn main() -> Result<()> {
 					&common_fields.underlying_mint_address,
 				);
 
-				let principal_mint_address =
-					get_principal_mint_address(&common_fields.underlying_mint_address);
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
 
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_underlying_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -344,7 +342,7 @@ fn main() -> Result<()> {
 						&common_fields.underlying_mint_address,
 					);
 
-				let principal_mint_address =
+				let (principal_mint_address, _) =
 					get_principal_mint_address(&common_fields.underlying_mint_address);
 
 				let user_underlying_token_address =
@@ -383,10 +381,10 @@ fn main() -> Result<()> {
 						&common_fields.underlying_mint_address,
 					);
 
-				let principal_mint_address =
+				let (principal_mint_address, _) =
 					get_principal_mint_address(&common_fields.underlying_mint_address);
 
-				let yield_mint_address =
+				let (yield_mint_address, _) =
 					get_yield_mint_address(&common_fields.underlying_mint_address);
 
 				let user_underlying_token_address =
@@ -427,8 +425,8 @@ fn main() -> Result<()> {
 				})?
 			}
 			Redeem::Yield(common_fields) => {
-				let yield_mint_address =
-					get_yield_mint_address(&common_fields.underlying_mint_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
 
 				let user_underlying_token_address =
 					spl_associated_token_account::get_associated_token_address(
@@ -455,23 +453,29 @@ fn main() -> Result<()> {
 			}
 		},
 		Commands::Terminate(terminate) => match terminate {
-			Terminate::Terminate(common_fields) => instruction::terminate(
-				&common_fields.lysergic_tokenizer_address,
-				&wallet_pubkey,
-				&spl_associated_token_account::get_associated_token_address(
+			Terminate::Terminate(common_fields) => {
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
+				instruction::terminate(
 					&common_fields.lysergic_tokenizer_address,
-					&common_fields.underlying_mint_address,
-				),
-				&spl_associated_token_account::get_associated_token_address(
-					&common_fields.lysergic_tokenizer_address,
-					&get_principal_mint_address(&common_fields.underlying_mint_address),
-				),
-				&spl_associated_token_account::get_associated_token_address(
-					&common_fields.lysergic_tokenizer_address,
-					&get_yield_mint_address(&common_fields.underlying_mint_address),
-				),
-			)
-			.map_err(|err| anyhow!("Unable to create `Terminate` instruction: {}", err))?,
+					&wallet_pubkey,
+					&spl_associated_token_account::get_associated_token_address(
+						&common_fields.lysergic_tokenizer_address,
+						&common_fields.underlying_mint_address,
+					),
+					&spl_associated_token_account::get_associated_token_address(
+						&common_fields.lysergic_tokenizer_address,
+						&principal_mint_address,
+					),
+					&spl_associated_token_account::get_associated_token_address(
+						&common_fields.lysergic_tokenizer_address,
+						&yield_mint_address,
+					),
+				)
+				.map_err(|err| anyhow!("Unable to create `Terminate` instruction: {}", err))?
+			}
 			Terminate::TerminateTokenizer(common_fields) => {
 				instruction::terminate_lysergic_tokenizer(
 					&common_fields.lysergic_tokenizer_address,
@@ -485,13 +489,19 @@ fn main() -> Result<()> {
 					anyhow!("Unable to create `TerminateTokenizer` instruction: {}", err)
 				})?
 			}
-			Terminate::TerminateMints(common_fields) => instruction::terminate_mints(
-				&common_fields.lysergic_tokenizer_address,
-				&wallet_pubkey,
-				&get_principal_mint_address(&common_fields.underlying_mint_address),
-				&get_yield_mint_address(&common_fields.underlying_mint_address),
-			)
-			.map_err(|err| anyhow!("Unable to create `TerminateMints` instruction: {}", err))?,
+			Terminate::TerminateMints(common_fields) => {
+				let (principal_mint_address, _) =
+					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
+				let (yield_mint_address, _) =
+					get_yield_mint_address(&common_fields.lysergic_tokenizer_address);
+				instruction::terminate_mints(
+					&common_fields.lysergic_tokenizer_address,
+					&wallet_pubkey,
+					&principal_mint_address,
+					&yield_mint_address,
+				)
+				.map_err(|err| anyhow!("Unable to create `TerminateMints` instruction: {}", err))?
+			}
 		},
 	};
 
