@@ -1,7 +1,7 @@
 use {
 	anyhow::{anyhow, Result},
 	clap::{command, Args, Parser, Subcommand},
-	lyst::{
+	sclr_token::{
 		get_principal_mint_address, get_tokenizer_address, get_yield_mint_address, instruction,
 		Expiry,
 	},
@@ -37,6 +37,8 @@ enum Commands {
 	Redeem(Redeem),
 	#[command(subcommand)]
 	Terminate(Terminate),
+	#[command(subcommand)]
+	Swap(Swap),
 }
 
 #[derive(Subcommand, Debug)]
@@ -44,6 +46,7 @@ enum Initialize {
 	Tokenizer(InitializeCommonFields),
 	Mints(InitializeCommonFields),
 	TokenizerMints(InitializeCommonFields),
+	Amm(InitializeCommonFields),
 }
 
 #[derive(Subcommand, Debug)]
@@ -66,6 +69,13 @@ enum Terminate {
 	Terminate(TerminateCommonFields),
 	TerminateTokenizer(TerminateCommonFields),
 	TerminateMints(TerminateCommonFields),
+}
+
+#[derive(Subcommand, Debug)]
+enum Swap {
+	Principal(InstructionCommonFields),
+	Yield(InstructionCommonFields),
+	Underlying(InstructionCommonFields),
 }
 
 #[derive(Args, Debug)]
@@ -129,8 +139,7 @@ fn main() -> Result<()> {
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let (yield_mint_address, _) =
-					get_yield_mint_address(&lysergic_tokenizer_address);
+				let (yield_mint_address, _) = get_yield_mint_address(&lysergic_tokenizer_address);
 
 				//TODO: Calculation methodology for the fixed APY of the principal token
 				//NOTE: placeholder
@@ -141,7 +150,7 @@ fn main() -> Result<()> {
 				println!("Principal Mint Address: {}", principal_mint_address);
 				println!("Yield Mint Address: {}", yield_mint_address);
 
-				instruction::init_lysergic_tokenizer(
+				instruction::init_tokenizer(
 					&lysergic_tokenizer_address,
 					&wallet_pubkey,
 					&underlying_vault_address,
@@ -168,8 +177,7 @@ fn main() -> Result<()> {
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let (yield_mint_address, _) =
-					get_yield_mint_address(&lysergic_tokenizer_address);
+				let (yield_mint_address, _) = get_yield_mint_address(&lysergic_tokenizer_address);
 
 				println!("Principal Mint Address: {}", principal_mint_address);
 				println!("Yield Mint Address: {}", yield_mint_address);
@@ -202,8 +210,7 @@ fn main() -> Result<()> {
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&lysergic_tokenizer_address);
 
-				let (yield_mint_address, _) =
-					get_yield_mint_address(&lysergic_tokenizer_address);
+				let (yield_mint_address, _) = get_yield_mint_address(&lysergic_tokenizer_address);
 
 				//TODO: Calculation methodology for the fixed APY of the principal token
 				//NOTE: placeholder
@@ -231,6 +238,7 @@ fn main() -> Result<()> {
 					)
 				})?
 			}
+			Initialize::Amm(_common_fields) => unimplemented!(),
 		},
 		Commands::Tokenize(tokenize) => match tokenize {
 			Tokenize::Deposit(common_fields) => {
@@ -294,7 +302,7 @@ fn main() -> Result<()> {
 					&common_fields.underlying_mint_address,
 				);
 
-                println!("Underlying vault: {}", underlying_vault);
+				println!("Underlying vault: {}", underlying_vault);
 
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
@@ -478,19 +486,15 @@ fn main() -> Result<()> {
 				)
 				.map_err(|err| anyhow!("Unable to create `Terminate` instruction: {}", err))?
 			}
-			Terminate::TerminateTokenizer(common_fields) => {
-				instruction::terminate_lysergic_tokenizer(
+			Terminate::TerminateTokenizer(common_fields) => instruction::terminate_tokenizer(
+				&common_fields.lysergic_tokenizer_address,
+				&wallet_pubkey,
+				&spl_associated_token_account::get_associated_token_address(
 					&common_fields.lysergic_tokenizer_address,
-					&wallet_pubkey,
-					&spl_associated_token_account::get_associated_token_address(
-						&common_fields.lysergic_tokenizer_address,
-						&common_fields.underlying_mint_address,
-					),
-				)
-				.map_err(|err| {
-					anyhow!("Unable to create `TerminateTokenizer` instruction: {}", err)
-				})?
-			}
+					&common_fields.underlying_mint_address,
+				),
+			)
+			.map_err(|err| anyhow!("Unable to create `TerminateTokenizer` instruction: {}", err))?,
 			Terminate::TerminateMints(common_fields) => {
 				let (principal_mint_address, _) =
 					get_principal_mint_address(&common_fields.lysergic_tokenizer_address);
@@ -504,6 +508,11 @@ fn main() -> Result<()> {
 				)
 				.map_err(|err| anyhow!("Unable to create `TerminateMints` instruction: {}", err))?
 			}
+		},
+		Commands::Swap(swap) => match swap {
+			Swap::Principal(_common_fields) => unimplemented!(),
+			Swap::Yield(_common_fields) => unimplemented!(),
+			Swap::Underlying(_common_fields) => unimplemented!(),
 		},
 	};
 

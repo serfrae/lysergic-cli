@@ -1,11 +1,11 @@
 [package]
-name = "lysergic-cli"
+name = "scalar-cli"
 authors = ["Andrew Fraser <a@serfrae.com>"]
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-lysergic-tokenizer = { version = "0.1.0", path = "../lysergic-tokenizer" }
+scalar-tokenizer = { version = "0.1.0", path = "../tokenizer" }
 anyhow = "1.0.86"
 borsh = {version = "1.5.1", features = ["derive"]}
 clap = {version = "4.5.7", features = ["cargo", "derive"]}
@@ -19,5 +19,5 @@ chrono = "0.4.38"
 solana-program = "2.0.1"
 
 [[bin]]
-name = "lysc"
+name = "sclr"
 path = "src/main.rs"

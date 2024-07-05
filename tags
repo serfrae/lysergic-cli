@@ -29,7 +29,7 @@
 !_TAG_OUTPUT_VERSION	0.0	/current.age/
 !_TAG_PARSER_VERSION!Rust	0.0	/current.age/
 !_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
-!_TAG_PROC_CWD	/home/a7rs/projects/solana/lysergic/lysergic-cli/	//
+!_TAG_PROC_CWD	/home/a7rs/projects/solana/scalar/cli/	//
 !_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
@@ -69,6 +69,6 @@ lysergic_tokenizer_address	src/main.rs	/^	lysergic_tokenizer_address: Pubkey,$/;
 main	src/main.rs	/^fn main() -> Result<()> {$/;"	f
 payer	src/main.rs	/^	payer: Option<String>,$/;"	m	struct:Cli
 rpc	src/main.rs	/^	rpc: Option<String>,$/;"	m	struct:Cli
-underlying_mint_address	src/main.rs	/^	underlying_mint_address: Option<Pubkey>,$/;"	m	struct:InstructionCommonFields
 underlying_mint_address	src/main.rs	/^	underlying_mint_address: Pubkey,$/;"	m	struct:InitializeCommonFields
+underlying_mint_address	src/main.rs	/^	underlying_mint_address: Pubkey,$/;"	m	struct:InstructionCommonFields
 underlying_mint_address	src/main.rs	/^	underlying_mint_address: Pubkey,$/;"	m	struct:TerminateCommonFields
